@@ -170,10 +170,10 @@ unsafe fn update() {
 
             // draw player
             set_colors(0x44);
-            oval(to_map(STATE.player_x), to_map(STATE.player_y), 6, 6);
+            oval(to_map(STATE.player_x) - 3, to_map(STATE.player_y) - 3, 6, 6);
             oval(
-                to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) + 2,
-                to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) + 2,
+                to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) - 2,
+                to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) - 2,
                 3, 3,
             );
         },
@@ -203,10 +203,10 @@ unsafe fn update() {
             // draw player
             set_colors(0x44);
 
-            oval(to_map(STATE.player_x), to_map(STATE.player_y), 6, 6);
+            oval(to_map(STATE.player_x) - 3, to_map(STATE.player_y) - 3, 6, 6);
             oval(
-                to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) + 2,
-                to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) + 2,
+                to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) - 2,
+                to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) - 2,
                 3, 3,
             );
 
@@ -217,7 +217,7 @@ unsafe fn update() {
                 let x2 = to_map(STATE.player_x + ray.distance * sinf(STATE.player_angle + ray.angle_diff + PI / 2_f32));
                 let y2 = to_map(STATE.player_y + ray.distance * cosf(STATE.player_angle + ray.angle_diff + PI / 2_f32));
 
-                line(to_map(STATE.player_x) + 3, to_map(STATE.player_y) + 3, x2 + 3, y2 + 3);
+                line(to_map(STATE.player_x), to_map(STATE.player_y), x2, y2);
             }
         }
     }
@@ -237,7 +237,7 @@ unsafe fn update() {
 }
 
 fn to_map(position: f32) -> i32 {
-    (position * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3) - 3
+    (position * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
 }
 
 static mut STATE: State = State {
