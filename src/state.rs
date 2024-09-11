@@ -15,6 +15,7 @@ const WALL_HEIGHT: f32 = 100.0; // Eit magisk tal?
 pub enum View {
     FirstPerson,
     MapView,
+    MapRayView,
 }
 
 pub struct State {

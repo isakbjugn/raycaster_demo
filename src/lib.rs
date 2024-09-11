@@ -34,6 +34,7 @@ fn get_colors() -> u16 {
 
 // extern functions linking to the wasm runtime
 extern "C" {
+    fn line(x1: i32, y1: i32, x2: i32, y2: i32);
     fn vline(x: i32, y: i32, len: u32);
     fn rect(x: i32, y: i32, width: u32, height: u32);
     #[link_name = "oval"]
@@ -169,22 +170,55 @@ unsafe fn update() {
 
             // draw player
             set_colors(0x44);
+            oval(to_map(STATE.player_x), to_map(STATE.player_y), 6, 6);
             oval(
-                (STATE.player_x * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
-                    - 3,
-                (STATE.player_y * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
-                    - 3,
-                6,
-                6,
+                to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) + 2,
+                to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) + 2,
+                3, 3,
             );
+        },
+
+        View::MapRayView => {
+            set_colors(0x11);
+            rect(0, 0, SCREEN_SIZE, SCREEN_SIZE);
+
+            // draw cells
+            for y in 0..MAP_HEIGHT as i32 {
+                for x in 0..MAP_WIDTH as i32 {
+                    if read_map(x as f32, y as f32) == Terrain::Wall {
+                        set_colors(0x22);
+                    } else {
+                        set_colors(0x33);
+                    }
+
+                    rect(
+                        x * TILE_SIZE + (TILE_SIZE / 2),
+                        y * TILE_SIZE + (TILE_SIZE / 2),
+                        TILE_SIZE as u32,
+                        TILE_SIZE as u32,
+                    );
+                }
+            }
+
+            // draw player
+            set_colors(0x44);
+
+            oval(to_map(STATE.player_x), to_map(STATE.player_y), 6, 6);
             oval(
-                ((STATE.player_x + sinf(STATE.player_angle + PI / 2_f32))  * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
-                    - 3,
-                ((STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
-                    - 3,
-                3,
-                3,
+                to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) + 2,
+                to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) + 2,
+                3, 3,
             );
+
+            // Gå gjennom kvar kolonne på skjermen og teikn ein vegg ut frå sentrum
+            for ray in STATE.get_rays().iter().step_by(20) {
+                let ray = ray.unwrap_or_else(|| { panic!("Ugyldig stråle!") });
+
+                let x2 = to_map(STATE.player_x + ray.distance * sinf(STATE.player_angle + ray.angle_diff + PI / 2_f32));
+                let y2 = to_map(STATE.player_y + ray.distance * cosf(STATE.player_angle + ray.angle_diff + PI / 2_f32));
+
+                line(to_map(STATE.player_x) + 3, to_map(STATE.player_y) + 3, x2 + 3, y2 + 3);
+            }
         }
     }
 
@@ -193,12 +227,17 @@ unsafe fn update() {
         if (*GAMEPAD1 & (*GAMEPAD1 ^ STATE.previous_gamepad)) & BUTTON_Z != 0 {
             STATE.view = match &STATE.view {
                 View::FirstPerson => View::MapView,
-                View::MapView => View::FirstPerson,
+                View::MapView => View::MapRayView,
+                View::MapRayView => View::FirstPerson,
             };
         }
 
         STATE.previous_gamepad = *GAMEPAD1;
     }
+}
+
+fn to_map(position: f32) -> i32 {
+    (position * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3) - 3
 }
 
 static mut STATE: State = State {
