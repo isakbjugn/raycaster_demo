@@ -179,12 +179,14 @@ unsafe fn update() {
 
     // toggle game view
     unsafe {
-        if (*GAMEPAD1 & BUTTON_Z != 0) {
+        if (*GAMEPAD1 & (*GAMEPAD1 ^ STATE.previous_gamepad)) & BUTTON_Z != 0 {
             STATE.view = match &STATE.view {
                 View::FirstPerson => View::MapView,
                 View::MapView => View::FirstPerson,
             }
         }
+        
+        STATE.previous_gamepad = *GAMEPAD1;
     }
 }
 
@@ -198,4 +200,5 @@ static mut STATE: State = State {
     player_z_velocity: 0.0,
     player_angle: -PI / 2_f32,
     player_angular_velocity: 0.0,
+    previous_gamepad: 0,
 };

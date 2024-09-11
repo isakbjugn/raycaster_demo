@@ -27,6 +27,7 @@ pub struct State {
     pub player_z_velocity: f32,
     pub player_angle: f32,
     pub player_angular_velocity: f32,
+    pub previous_gamepad: u8,
 }
 
 fn distance(a: f32, b: f32) -> f32 {
