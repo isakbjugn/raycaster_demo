@@ -6,7 +6,7 @@ mod map;
 
 use core::{arch::wasm32, panic::PanicInfo};
 use core::f32::consts::{PI};
-use libm::{cos, floorf, sin};
+use libm::{cosf, floorf, sinf};
 use crate::constants::SCREEN_SIZE;
 use crate::map::{read_map, Orientation, Terrain, MAP_HEIGHT, MAP_WIDTH, TILE_SIZE};
 use crate::state::{State, View};
@@ -42,6 +42,8 @@ extern "C" {
     fn extern_text(text: *const u8, length: usize, x: i32, y: i32);
     #[cfg(feature = "save")]
     fn diskw(dest_ptr: *const u8, size: u32);
+    #[link_name = "trace"]
+    fn extern_trace(message: *const u8);
 }
 
 fn oval(x: i32, y: i32, width: u32, height: u32) {
@@ -50,6 +52,12 @@ fn oval(x: i32, y: i32, width: u32, height: u32) {
 
 fn text(text: &str, x: i32, y: i32) {
     unsafe { extern_text(text.as_ptr(), text.len(), x, y) }
+}
+
+fn trace(message: &str) {
+    unsafe {
+        extern_trace(message.as_ptr())
+    }
 }
 
 fn extract_colors() -> (u16, u16) {
@@ -171,9 +179,9 @@ unsafe fn update() {
                 6,
             );
             oval(
-                ((STATE.player_x + sin((STATE.player_angle + PI / 2_f32) as f64) as f32)  * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
+                ((STATE.player_x + sinf(STATE.player_angle + PI / 2_f32))  * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
                     - 3,
-                ((STATE.player_y + cos((STATE.player_angle + PI / 2_f32) as f64) as f32) * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
+                ((STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
                     - 3,
                 3,
                 3,
@@ -187,7 +195,7 @@ unsafe fn update() {
             STATE.view = match &STATE.view {
                 View::FirstPerson => View::MapView,
                 View::MapView => View::FirstPerson,
-            }
+            };
         }
 
         STATE.previous_gamepad = *GAMEPAD1;
