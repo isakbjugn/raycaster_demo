@@ -15,7 +15,7 @@ size:
 run: build bundle
 	w4 run-native raycaster_demo.wasm
 
-run-web: build-web bundle
+run-web: build bundle
 	w4 run --no-qr raycaster_demo.wasm
 	# w4 run --no-qr --no-open raycaster_demo.wasm
 
