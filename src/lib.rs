@@ -122,8 +122,6 @@ unsafe fn update() {
     set_colors(0x41);
     match STATE.view {
         View::FirstPerson => {
-            text("Find the way out!", 15, 10);
-            
             // Gå gjennom kvar kolonne på skjermen og teikn ein vegg ut frå sentrum
             for (x, ray) in STATE.get_rays().iter().enumerate() {
                 let ray = ray.unwrap_or_else(|| { panic!("Ugyldig stråle!") });
@@ -204,7 +202,6 @@ unsafe fn update() {
 }
 
 static mut STATE: State = State {
-    game_won: false,
     view: View::FirstPerson,
     player_x: 1.5,
     player_y: 1.5,

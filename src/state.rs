@@ -18,7 +18,6 @@ pub enum View {
 }
 
 pub struct State {
-    pub game_won: bool,
     pub view: View,
     pub player_x: f32,
     pub player_y: f32,
