@@ -146,6 +146,27 @@ unsafe fn update() {
                 }
             }
         }
+
+        View::FirstPersonMonochrome => {
+            // Gå gjennom kvar kolonne på skjermen og teikn ein vegg ut frå sentrum
+            for (x, ray) in STATE.get_rays().iter().enumerate() {
+                let ray = ray.unwrap_or_else(|| { panic!("Ugyldig stråle!") });
+                let height = ray.wall_height();
+                let scaling_factor = height as f32 / SCREEN_SIZE as f32;
+                let wall_top = 80 - (height as i32 / 2) + floorf(STATE.player_z * 80.0 * scaling_factor) as i32;
+
+                match ray.terrain {
+                    Terrain::Wall => {
+                        vline(x as i32, wall_top, height as u32);
+                    },
+                    Terrain::Doorway => {
+                        set_colors(0x24);
+                        dashed_vline(x as i32, wall_top, height as u32);
+                    },
+                    Terrain::Open => panic!("Wall should never have Terrain::Open"),
+                }
+            }
+        }
         View::Map => {
             set_colors(0x11);
             rect(0, 0, SCREEN_SIZE, SCREEN_SIZE);
@@ -226,9 +247,10 @@ unsafe fn update() {
     unsafe {
         if (*GAMEPAD1 & (*GAMEPAD1 ^ STATE.previous_gamepad)) & BUTTON_Z != 0 {
             STATE.view = match &STATE.view {
-                View::FirstPerson => View::Map,
                 View::Map => View::MapWithRays,
-                View::MapWithRays => View::FirstPerson,
+                View::MapWithRays => View::FirstPersonMonochrome,
+                View::FirstPersonMonochrome => View::FirstPerson,
+                View::FirstPerson => View::Map,
             };
         }
 

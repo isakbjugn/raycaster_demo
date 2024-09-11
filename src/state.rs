@@ -15,6 +15,7 @@ const WALL_HEIGHT: f32 = 100.0; // Eit magisk tal?
 pub enum View {
     Map,
     MapWithRays,
+    FirstPersonMonochrome,
     FirstPerson,
 }
 
@@ -218,7 +219,7 @@ impl State {
 
         let angle_step = FOV / SCREEN_SIZE as f32;
         let initial_angle = self.player_angle + HALF_FOV;
-        
+
         let mut rays = [None; SCREEN_SIZE as usize];
 
         for (idx, ray) in rays.iter_mut().enumerate() {
