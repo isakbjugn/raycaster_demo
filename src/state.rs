@@ -14,8 +14,7 @@ const WALL_HEIGHT: f32 = 100.0; // Eit magisk tal?
 
 pub enum View {
     FirstPerson,
-    Victory,
-    Fooled,
+    MapView,
 }
 
 pub struct State {
@@ -50,11 +49,7 @@ impl State {
         self.player_angle += self.player_angular_velocity;
 
         match read_map(self.player_x, self.player_y) {
-            Terrain::Open => {
-                if !self.game_won {
-                    self.view = View::FirstPerson;
-                }
-            },
+            Terrain::Open => {},
             Terrain::Wall => {
                 if read_map(self.player_x, previous_position.1) == Terrain::Open {
                     self.player_y = previous_position.1;
@@ -66,13 +61,10 @@ impl State {
                 }
             },
             Terrain::Doorway => {
-                self.view = View::Victory;
                 self.player_x = previous_position.0;
                 self.player_y = previous_position.1;
             },
-            Terrain::Mirage => {
-                self.view = View::Fooled;
-            },
+            Terrain::Mirage => {},
         }
 
         if jump && self.player_z == 0.0 {

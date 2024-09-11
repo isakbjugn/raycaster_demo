@@ -8,7 +8,7 @@ use core::{arch::wasm32, panic::PanicInfo};
 use core::f32::consts::{PI};
 use libm::{floorf};
 use crate::constants::SCREEN_SIZE;
-use crate::map::{Orientation, Terrain};
+use crate::map::{read_map, Orientation, Terrain, MAP_HEIGHT, MAP_WIDTH, TILE_SIZE};
 use crate::state::{State, View};
 
 static mut PALETTE: *mut [u32; 4] = 0x04 as *mut [u32; 4];
@@ -21,7 +21,7 @@ const BUTTON_RIGHT: u8 = 32; // 00100000
 const BUTTON_UP: u8 = 64;    // 01000000
 const BUTTON_DOWN: u8 = 128; // 10000000
 const BUTTON_SPACE: u8 = 1; // 00000001
-const _BUTTON_Z: u8 = 2; // 00000010
+const BUTTON_Z: u8 = 2; // 00000010
 
 // WASM-4 hjelpe-funksjonar
 fn set_colors(colors: u16) {
@@ -36,10 +36,16 @@ fn get_colors() -> u16 {
 extern "C" {
     fn vline(x: i32, y: i32, len: u32);
     fn rect(x: i32, y: i32, width: u32, height: u32);
+    #[link_name = "oval"]
+    fn extern_oval(x: i32, y: i32, width: u32, height: u32);
     #[link_name = "textUtf8"]
     fn extern_text(text: *const u8, length: usize, x: i32, y: i32);
     #[cfg(feature = "save")]
     fn diskw(dest_ptr: *const u8, size: u32);
+}
+
+fn oval(x: i32, y: i32, width: u32, height: u32) {
+    unsafe { extern_oval(x, y, width, height) }
 }
 
 fn text(text: &str, x: i32, y: i32) {
@@ -107,52 +113,78 @@ unsafe fn update() {
 
     set_colors(0x41);
     match STATE.view {
-        View::FirstPerson => text("Find the way out!", 15, 10),
-        View::Victory => {
-            text("You made it!", 30, 10);
-            #[cfg(feature = "save")]
-            if !STATE.game_won {
-                let game_state_string = "vunnet".as_bytes();
-                diskw(game_state_string.as_ptr(), core::mem::size_of::<i32>() as u32);
-            }
-            STATE.game_won = true;
-        },
-        View::Fooled => (),
-    }
+        View::FirstPerson => {
+            text("Find the way out!", 15, 10);
+            
+            // Gå gjennom kvar kolonne på skjermen og teikn ein vegg ut frå sentrum
+            for (x, wall) in STATE.get_view().iter().enumerate() {
+                let (height, terrain, orientation) = wall;
+                let scaling_factor = *height as f32 / SCREEN_SIZE as f32;
+                let wall_top = 80 - (height / 2) + floorf(STATE.player_z * 80.0 * scaling_factor) as i32;
 
-    // let mut buffer = ryu::Buffer::new();
-    // text(buffer.format(STATE.player_z), 30, 25);
-
-    // Gå gjennom kvar kolonne på skjermen og teikn ein vegg ut frå sentrum
-    for (x, wall) in STATE.get_view().iter().enumerate() {
-        let (height, terrain, orientation) = wall;
-        let scaling_factor = *height as f32 / SCREEN_SIZE as f32;
-        let wall_top = 80 - (height / 2) + floorf(STATE.player_z * 80.0 * scaling_factor) as i32;
-
-        match terrain {
-            Terrain::Wall => {
-                match orientation {
-                    Orientation::Vertical => { set_colors(0x11); },
-                    Orientation::Horizontal => { set_colors(0x22); },
+                match terrain {
+                    Terrain::Wall => {
+                        match orientation {
+                            Orientation::Vertical => { set_colors(0x11); },
+                            Orientation::Horizontal => { set_colors(0x22); },
+                        }
+                        vline(x as i32, wall_top, *height as u32);
+                    },
+                    Terrain::Doorway => {
+                        set_colors(0x24);
+                        dashed_vline(x as i32, wall_top, *height as u32);
+                    },
+                    Terrain::Mirage => {
+                        set_colors(0x24);
+                        dashed_vline(x as i32, wall_top, *height as u32);
+                    },
+                    Terrain::Open => panic!("Wall should never have Terrain::Open"),
                 }
-                vline(x as i32, wall_top, *height as u32);
-            },
-            Terrain::Doorway => {
-                set_colors(0x24);
-                dashed_vline(x as i32, wall_top, *height as u32);
-            },
-            Terrain::Mirage => {
-                set_colors(0x24);
-                dashed_vline(x as i32, wall_top, *height as u32);
-            },
-            Terrain::Open => panic!("Wall should never have Terrain::Open"),
+            }
+        }
+        View::MapView => {
+            set_colors(0x11);
+            rect(0, 0, SCREEN_SIZE, SCREEN_SIZE);
+
+            // draw cells
+            for y in 0..MAP_HEIGHT as i32 {
+                for x in 0..MAP_WIDTH as i32 {
+                    if read_map(x as f32, y as f32) == Terrain::Wall {
+                        set_colors(0x22);
+                    } else {
+                        set_colors(0x33);
+                    }
+
+                    rect(
+                        x * TILE_SIZE + (TILE_SIZE / 2),
+                        y * TILE_SIZE + (TILE_SIZE / 2),
+                        TILE_SIZE as u32,
+                        TILE_SIZE as u32,
+                    );
+                }
+            }
+
+            // draw player
+            set_colors(0x44);
+            oval(
+                (STATE.player_x * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
+                    - 3,
+                (STATE.player_y * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
+                    - 3,
+                6,
+                6,
+            );
         }
     }
 
-    set_colors(0x21);
-    match STATE.view {
-        View::Fooled => text("Trick exit!", 35, 50),
-        _ => (),
+    // toggle game view
+    unsafe {
+        if (*GAMEPAD1 & BUTTON_Z != 0) {
+            STATE.view = match &STATE.view {
+                View::FirstPerson => View::MapView,
+                View::MapView => View::FirstPerson,
+            }
+        }
     }
 }
 

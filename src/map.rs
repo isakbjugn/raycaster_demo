@@ -1,5 +1,8 @@
-const MAP_HEIGHT: usize = 8;
-const MAP_WIDTH: usize = 21;
+use crate::constants::SCREEN_SIZE;
+
+pub const MAP_HEIGHT: usize = 8;
+pub const MAP_WIDTH: usize = 21;
+pub const TILE_SIZE: i32 = SCREEN_SIZE as i32 / MAP_WIDTH as i32;
 
 const MAP: [u8; MAP_HEIGHT * MAP_WIDTH] = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
