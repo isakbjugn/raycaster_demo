@@ -146,7 +146,7 @@ unsafe fn update() {
                 }
             }
         }
-        View::MapView => {
+        View::Map => {
             set_colors(0x11);
             rect(0, 0, SCREEN_SIZE, SCREEN_SIZE);
 
@@ -178,7 +178,7 @@ unsafe fn update() {
             );
         },
 
-        View::MapRayView => {
+        View::MapWithRays => {
             set_colors(0x11);
             rect(0, 0, SCREEN_SIZE, SCREEN_SIZE);
 
@@ -226,9 +226,9 @@ unsafe fn update() {
     unsafe {
         if (*GAMEPAD1 & (*GAMEPAD1 ^ STATE.previous_gamepad)) & BUTTON_Z != 0 {
             STATE.view = match &STATE.view {
-                View::FirstPerson => View::MapView,
-                View::MapView => View::MapRayView,
-                View::MapRayView => View::FirstPerson,
+                View::FirstPerson => View::Map,
+                View::Map => View::MapWithRays,
+                View::MapWithRays => View::FirstPerson,
             };
         }
 
@@ -241,7 +241,7 @@ fn to_map(position: f32) -> i32 {
 }
 
 static mut STATE: State = State {
-    view: View::FirstPerson,
+    view: View::Map,
     player_x: 1.5,
     player_y: 1.5,
     player_z: 0.0,

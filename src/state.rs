@@ -13,9 +13,9 @@ const ANGLE_STEP: f32 = FOV / (SCREEN_SIZE as f32); // Vinkelen mellom kvar str√
 const WALL_HEIGHT: f32 = 100.0; // Eit magisk tal?
 
 pub enum View {
+    Map,
+    MapWithRays,
     FirstPerson,
-    MapView,
-    MapRayView,
 }
 
 pub struct State {
