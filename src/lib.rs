@@ -210,11 +210,19 @@ unsafe fn update() {
 
             // draw player
             set_colors(0x44);
-            oval(to_map(STATE.player_x) - 3, to_map(STATE.player_y) - 3, 6, 6);
+            let jump_height = floorf(STATE.player_z * 3.0) as u32;
+            let jump_perturbation = floorf(STATE.player_z * 1.5) as i32;
+            oval(
+                to_map(STATE.player_x) - 3 - jump_perturbation,
+                to_map(STATE.player_y) - 3 - jump_perturbation,
+                6 + jump_height,
+                6 + jump_height
+            );
             oval(
                 to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) - 2,
                 to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) - 2,
-                3, 3,
+                3,
+                3,
             );
         },
 
@@ -222,13 +230,38 @@ unsafe fn update() {
             set_colors(0x11);
             rect(0, 0, SCREEN_SIZE, SCREEN_SIZE);
 
-            // draw cells
+            // draw walls
+            set_colors(0x22);
+            for y in 0..MAP_HEIGHT as i32 {
+                for x in 0..MAP_WIDTH as i32 {
+                    if read_map(x as f32, y as f32) != Terrain::Wall {
+                        continue
+                    }
+
+                    rect(
+                        x * TILE_SIZE + (TILE_SIZE / 2),
+                        y * TILE_SIZE + (TILE_SIZE / 2),
+                        TILE_SIZE as u32,
+                        TILE_SIZE as u32,
+                    );
+                }
+            }
+
+            // draw player
+            set_colors(0x44);
+            oval(
+                to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) - 2,
+                to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) - 2,
+                3,
+                3,
+            );
+
+            // draw floor
+            set_colors(0x33);
             for y in 0..MAP_HEIGHT as i32 {
                 for x in 0..MAP_WIDTH as i32 {
                     if read_map(x as f32, y as f32) == Terrain::Wall {
-                        set_colors(0x22);
-                    } else {
-                        set_colors(0x33);
+                        continue
                     }
 
                     rect(
@@ -243,11 +276,13 @@ unsafe fn update() {
             // draw player
             set_colors(0x44);
 
-            oval(to_map(STATE.player_x) - 3, to_map(STATE.player_y) - 3, 6, 6);
+            let jump_height = floorf(STATE.player_z * 3.0) as u32;
+            let jump_perturbation = floorf(STATE.player_z * 1.5) as i32;
             oval(
-                to_map(STATE.player_x + sinf(STATE.player_angle + PI / 2_f32)) - 2,
-                to_map(STATE.player_y + cosf(STATE.player_angle + PI / 2_f32)) - 2,
-                3, 3,
+                to_map(STATE.player_x) - 3 - jump_perturbation,
+                to_map(STATE.player_y) - 3 - jump_perturbation,
+                6 + jump_height,
+                6 + jump_height
             );
 
             // Gå gjennom kvar kolonne på skjermen og teikn ein vegg ut frå sentrum
