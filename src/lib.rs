@@ -134,10 +134,6 @@ unsafe fn update() {
                         set_colors(0x24);
                         dashed_vline(x as i32, wall_top, *height as u32);
                     },
-                    Terrain::Mirage => {
-                        set_colors(0x24);
-                        dashed_vline(x as i32, wall_top, *height as u32);
-                    },
                     Terrain::Open => panic!("Wall should never have Terrain::Open"),
                 }
             }

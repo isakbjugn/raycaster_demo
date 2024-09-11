@@ -65,7 +65,6 @@ impl State {
                 self.player_x = previous_position.0;
                 self.player_y = previous_position.1;
             },
-            Terrain::Mirage => {},
         }
 
         if jump && self.player_z == 0.0 {

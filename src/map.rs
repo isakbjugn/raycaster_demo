@@ -20,7 +20,6 @@ pub enum Terrain {
     Open,
     Wall,
     Doorway,
-    Mirage,
 }
 
 #[derive(Clone, Copy)]
@@ -35,7 +34,6 @@ pub fn read_map(x: f32, y: f32) -> Terrain {
         Some(&square) if square == 0 => Terrain::Open,
         Some(&square) if square == 1 => Terrain::Wall,
         Some(&square) if square == 2 => Terrain::Doorway,
-        Some(&square) if square == 4 => Terrain::Mirage,
         _ => Terrain::Wall,
     }
 }
