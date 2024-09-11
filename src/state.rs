@@ -85,7 +85,7 @@ impl State {
     }
 
     /// Gjev tilbake næraste vegg som ei stråle skjer langsetter ei horisontal linje
-    fn horizontal_intersection(&self, angle: f32) -> (f32, Terrain) {
+    fn horizontal_intersection(&self, angle: f32) -> Ray {
         // Seier om vinkelen peikar nordover (i det heile)
         let up = fabsf(floorf(angle / PI) % 2.0) != 0.0;
 
@@ -119,10 +119,20 @@ impl State {
             // Lykkja stoggar når strålen kjem til ein vegg
             terrain = read_map(current_x, current_y);
             if terrain == Terrain::Wall {
-                return (distance(next_x, next_y), Terrain::Wall);
+                return Ray {
+                    angle_diff: angle - self.player_angle,
+                    distance: distance(next_x, next_y),
+                    terrain: Terrain::Wall,
+                    orientation: Orientation::Horizontal,
+                }
             }
             if terrain != Terrain::Open {
-                return (100.0, Terrain::Wall);
+                return Ray {
+                    angle_diff: angle - self.player_angle,
+                    distance: 100.0,
+                    terrain: Terrain::Wall,
+                    orientation: Orientation::Horizontal,
+                }
             }
 
             // forleng strålen så lenge me ikkje har nådd ein vegg
@@ -131,11 +141,16 @@ impl State {
         }
 
         // gje tilbake avstanden fra (next_x, next_y) til spelarens posisjon
-        (distance(next_x, next_y), Terrain::Wall)
+        Ray {
+            angle_diff: angle - self.player_angle,
+            distance: distance(next_x, next_y),
+            terrain: Terrain::Wall,
+            orientation: Orientation::Horizontal,
+        }
     }
 
     /// Gjev tilbake næraste vegg som ei stråle skjer langsetter ei vertikal linje
-    fn vertical_intersection(&self, angle: f32) -> (f32, Terrain) {
+    fn vertical_intersection(&self, angle: f32) -> Ray {
         // Seier om vinkelen peikar nordover (i det heile)
         let right = fabsf(floorf((angle - FRAC_PI_2) / PI) % 2.0) != 0.0;
 
@@ -169,10 +184,20 @@ impl State {
             // Lykkja stoggar når strålen kjem til ein vegg
             terrain = read_map(current_x, current_y);
             if terrain == Terrain::Wall {
-                return (distance(next_x, next_y), Terrain::Wall);
+                return Ray {
+                    angle_diff: angle - self.player_angle,
+                    distance: distance(next_x, next_y),
+                    terrain: Terrain::Wall,
+                    orientation: Orientation::Vertical,
+                };
             }
             if terrain != Terrain::Open {
-                return (100.0, Terrain::Wall);
+                return Ray {
+                    angle_diff: angle - self.player_angle,
+                    distance: 100.0,
+                    terrain: Terrain::Wall,
+                    orientation: Orientation::Vertical,
+                };
             }
 
             // forleng strålen så lenge me ikkje har nådd ein vegg
@@ -181,38 +206,50 @@ impl State {
         }
 
         // gje tilbake avstanden fra (next_x, next_y) til spelarens posisjon
-        (distance(next_x, next_y), Terrain::Wall)
+        Ray {
+            angle_diff: angle - self.player_angle,
+            distance: distance(next_x, next_y),
+            terrain: Terrain::Wall,
+            orientation: Orientation::Vertical,
+        }
     }
 
-    /// Gjev 160 vegghøgder og deira farge frå spelarens perspektiv
-    pub fn get_view(&self) -> [(i32, Terrain, Orientation); SCREEN_SIZE as usize] {
-        // Start ved enden av spelarens synsfelt
-        let starting_angle = self.player_angle + HALF_FOV;
+    pub fn get_rays(&self) -> [Option<Ray>; SCREEN_SIZE as usize] {
 
-        let mut walls = [(0, Terrain::Open, Orientation::Horizontal); SCREEN_SIZE as usize];
+        let angle_step = FOV / SCREEN_SIZE as f32;
+        let initial_angle = self.player_angle + HALF_FOV;
+        
+        let mut rays = [None; SCREEN_SIZE as usize];
 
-        for (idx, wall) in walls.iter_mut().enumerate() {
-            // idx er veggens indeks, wall er ein muterbar referanse til wall-vektoren
-            let angle = starting_angle - idx as f32 * ANGLE_STEP;
-
-            // Hentar næraste skjering i horisontal og vertikal retning
-            let (h_distance, h_terrain) = self.horizontal_intersection(angle);
-            let (v_distance, v_terrain) = self.vertical_intersection(angle);
-
-            let (min_distance, terrain, orientation) = if h_distance < v_distance {
-                (h_distance, h_terrain, Orientation::Horizontal)
-            } else {
-                (v_distance, v_terrain, Orientation::Vertical)
-            };
-
-            // Vel minste avstand og konverterer til vegg-høgde
-            *wall = (
-                (WALL_HEIGHT / (min_distance * cosf(angle - self.player_angle)) ) as i32,
-                terrain,
-                orientation,
-            );
+        for (idx, ray) in rays.iter_mut().enumerate() {
+            *ray = Some(self.raycast(initial_angle - idx as f32 * angle_step))
         }
 
-        walls
+        rays
+    }
+
+    fn raycast(&self, angle: f32) -> Ray {
+        let vertical_intersection = self.vertical_intersection(angle);
+        let horizontal_intersection = self.horizontal_intersection(angle);
+
+        if vertical_intersection.distance < horizontal_intersection.distance {
+            vertical_intersection
+        } else {
+            horizontal_intersection
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Ray {
+    pub angle_diff: f32,
+    pub distance: f32,
+    pub terrain: Terrain,
+    pub orientation: Orientation,
+}
+
+impl Ray {
+    pub fn wall_height(&self) -> f32 {
+        WALL_HEIGHT / (self.distance * cosf(self.angle_diff))
     }
 }

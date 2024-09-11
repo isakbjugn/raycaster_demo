@@ -125,22 +125,23 @@ unsafe fn update() {
             text("Find the way out!", 15, 10);
             
             // Gå gjennom kvar kolonne på skjermen og teikn ein vegg ut frå sentrum
-            for (x, wall) in STATE.get_view().iter().enumerate() {
-                let (height, terrain, orientation) = wall;
-                let scaling_factor = *height as f32 / SCREEN_SIZE as f32;
-                let wall_top = 80 - (height / 2) + floorf(STATE.player_z * 80.0 * scaling_factor) as i32;
+            for (x, ray) in STATE.get_rays().iter().enumerate() {
+                let ray = ray.unwrap_or_else(|| { panic!("Ugyldig stråle!") });
+                let height = ray.wall_height();
+                let scaling_factor = height as f32 / SCREEN_SIZE as f32;
+                let wall_top = 80 - (height as i32 / 2) + floorf(STATE.player_z * 80.0 * scaling_factor) as i32;
 
-                match terrain {
+                match ray.terrain {
                     Terrain::Wall => {
-                        match orientation {
+                        match ray.orientation {
                             Orientation::Vertical => { set_colors(0x11); },
                             Orientation::Horizontal => { set_colors(0x22); },
                         }
-                        vline(x as i32, wall_top, *height as u32);
+                        vline(x as i32, wall_top, height as u32);
                     },
                     Terrain::Doorway => {
                         set_colors(0x24);
-                        dashed_vline(x as i32, wall_top, *height as u32);
+                        dashed_vline(x as i32, wall_top, height as u32);
                     },
                     Terrain::Open => panic!("Wall should never have Terrain::Open"),
                 }
