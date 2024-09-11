@@ -15,6 +15,7 @@ const WALL_HEIGHT: f32 = 100.0; // Eit magisk tal?
 pub enum View {
     Map,
     MapWithRays,
+    FishEyeMonochrome,
     FirstPersonMonochrome,
     FirstPerson,
 }
@@ -252,5 +253,8 @@ pub struct Ray {
 impl Ray {
     pub fn wall_height(&self) -> f32 {
         WALL_HEIGHT / (self.distance * cosf(self.angle_diff))
+    }
+    pub fn wall_height_fisheye(&self) -> f32 {
+        WALL_HEIGHT / self.distance
     }
 }
