@@ -6,7 +6,7 @@ mod map;
 
 use core::{arch::wasm32, panic::PanicInfo};
 use core::f32::consts::{PI};
-use libm::{floorf};
+use libm::{cos, floorf, sin};
 use crate::constants::SCREEN_SIZE;
 use crate::map::{read_map, Orientation, Terrain, MAP_HEIGHT, MAP_WIDTH, TILE_SIZE};
 use crate::state::{State, View};
@@ -170,6 +170,14 @@ unsafe fn update() {
                 6,
                 6,
             );
+            oval(
+                ((STATE.player_x + sin((STATE.player_angle + PI / 2_f32) as f64) as f32)  * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
+                    - 3,
+                ((STATE.player_y + cos((STATE.player_angle + PI / 2_f32) as f64) as f32) * TILE_SIZE as f32) as i32 + ((TILE_SIZE / 4) * 3)
+                    - 3,
+                3,
+                3,
+            );
         }
     }
 
@@ -181,7 +189,7 @@ unsafe fn update() {
                 View::MapView => View::FirstPerson,
             }
         }
-        
+
         STATE.previous_gamepad = *GAMEPAD1;
     }
 }
